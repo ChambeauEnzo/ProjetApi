@@ -1,9 +1,9 @@
 const express = require('express');
 const mysql = require('mysql');
-const bodyParser = require('body-parser'); 
+const bodyParser = require('body-parser');
+const jwt = require('jsonwebtoken'); // Importez jsonwebtoken
 const app = express();
 const cors = require('cors');
-
 
 // Configuration de la connexion à la base de données
 const dbConfig = {
@@ -20,7 +20,6 @@ const conn = mysql.createConnection(dbConfig);
 app.use(bodyParser.json());
 app.use(cors());
 
-
 // Endpoint pour ajouter une localisation à la base de données
 app.post('/ajouterlocalisation', (req, res) => {
     const { ville } = req.body;
@@ -35,6 +34,76 @@ app.post('/ajouterlocalisation', (req, res) => {
 
         console.log('localisation ajoutée avec succès:', result);
         res.status(200).json({ message: 'localisation ajoutée avec succès.' });
+    });
+});
+
+// Middleware d'authentification
+function authenticateToken(req, res, next) {
+    const userCredentialsCookie = req.cookies.userCredentials; // Utilisez la clé correcte
+
+    if (!userCredentialsCookie) {
+        return res.status(401).json({ error: 'Token manquant, veuillez vous connecter.' });
+    }
+
+    const { nom, token } = JSON.parse(userCredentialsCookie); // Parsez le contenu du cookie
+
+    jwt.verify(token, 'votre_clé_secrète', (err, decodedToken) => {
+        if (err) {
+            return res.status(403).json({ error: 'Token invalide.' });
+        }
+        req.user = decodedToken;
+        next();
+    });
+}
+
+// Route d'exemple nécessitant une authentification
+app.get('/api/private', authenticateToken, (req, res) => {
+    res.json({ message: 'Contenu privé accessible !' });
+});
+
+// Route de connexion
+app.post('/api/login', (req, res) => {
+    const { nom, motDePasse } = req.body;
+
+    const sql = `SELECT * FROM User WHERE nom = ? AND mot_de_passe = ?`;
+    conn.query(sql, [nom, motDePasse], (err, results) => {
+        if (err) {
+            console.error('Erreur lors de l\'exécution de la requête SQL :', err);
+            return res.status(500).json({ error: 'Erreur interne du serveur' });
+        }
+
+        if (results.length > 0) {
+            const user = { nom };
+            const token = jwt.sign(user, 'votre_clé_secrète', { expiresIn: '7d' });
+
+            // Stockage du token dans un cookie
+            res.cookie('token', token, { httpOnly: true });
+
+            // Envoyer le token dans la réponse JSON
+            res.status(200).json({ message: 'Connexion réussie!', token: token });
+        } else {
+            res.status(401).json({ error: 'Nom d\'utilisateur ou mot de passe invalide.' });
+        }
+    });
+});
+
+// Route d'inscription
+app.post('/api/register', (req, res) => {
+    const { nom, motDePasse } = req.body;
+
+    // Génération du token pour le nouvel utilisateur
+    const user = { nom };
+    const token = jwt.sign(user, 'votre_clé_secrète', { expiresIn: '7d' });
+
+    // Requête SQL pour insérer l'utilisateur dans la base de données avec le token généré
+    const sql = `INSERT INTO User (nom, mot_de_passe, token) VALUES (?, ?, ?)`;
+    conn.query(sql, [nom, motDePasse, token], (err, results) => {
+        if (err) {
+            console.error('Erreur lors de l\'exécution de la requête SQL :', err);
+            return res.status(500).json({ error: 'Erreur interne du serveur' });
+        }
+
+        res.status(200).json({ message: 'Inscription réussie !' });
     });
 });
 
