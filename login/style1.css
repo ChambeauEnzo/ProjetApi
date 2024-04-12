@@ -9,7 +9,6 @@ body {
     margin: 0;
     padding: 0;
     background-color: #f0f0f0;
-    /* Ajoute le fond d'image et configure l'animation */
     background-image: url('image/pexels-pixabay-258149.jpg');
     background-size: cover;
     background-repeat: no-repeat;
@@ -21,7 +20,7 @@ body {
     width: 300px;
     margin: auto; /* Centrer horizontalement */
     margin-top: 100px; /* Garder uniquement la marge supérieure */
-    background-color: #fff;
+    background-color: rgba(255, 255, 255, 0.671);
     padding: 20px;
     border-radius: 5px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
@@ -100,8 +99,6 @@ body {
     padding: 0;
     background-color: #f0f0f0;
 }
-
-
 
 .inscription-form {
     margin-top: 20px;

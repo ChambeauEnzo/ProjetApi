@@ -1,3 +1,15 @@
+// Fonction pour vérifier si le token est présent dans le cookie
+function checkToken() {
+    const token = document.cookie.split(';').find(cookie => cookie.trim().startsWith('token='));
+    if (!token) {
+        // Si le token n'est pas présent, rediriger vers la page de connexion
+        window.location.href = 'index.html';
+    }
+}
+
+// Appel de la fonction lors du chargement de la page
+
+window.onload = checkToken;
 const container = document.querySelector('.container');
 const search = document.querySelector('.search-box button');
 const weatherBox = document.querySelector('.weather-box');
